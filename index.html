@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jeremy's AI Emporium</title>
+<meta name="description" content="Things made with AI, all free. Take what you like.">
+<style>
+  /* Layout: striped awning, shop sign, then a narrow "store info" column beside a grid of shelf items. */
+  :root {
+    color-scheme: light dark;
+    --bg: #e6edf1;
+    --ink: #1b2430;
+    --dim: #53606e;
+    --awning-a: #0f766e;
+    --awning-b: #f4f7f8;
+    --sign: #1c2733;
+    --sign-text: #ffc857;
+    --card: #ffffff;
+    --line: #c3cfd8;
+    --shelf: #b9a47e;
+    --price: #b4302a;
+    --link: #0f766e;
+    --link-ink: #ffffff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f1620;
+      --ink: #e8eef3;
+      --dim: #9aa8b6;
+      --awning-a: #14a39a;
+      --awning-b: #1d2a38;
+      --sign: #0a0f16;
+      --sign-text: #ffc857;
+      --card: #1a2432;
+      --line: #2c3a4b;
+      --shelf: #6b5a3c;
+      --price: #ff8f86;
+      --link: #2dd4bf;
+      --link-ink: #0a0f16;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  a { color: var(--link); }
+  :focus-visible { outline: 3px solid var(--sign-text); outline-offset: 2px; }
+
+  /* Awning: stripes with a scalloped lower edge. Circle colours match the stripe above them. */
+  .awning {
+    position: relative;
+    height: 48px;
+    margin-bottom: 24px;
+    background: repeating-linear-gradient(90deg, var(--awning-a) 0 48px, var(--awning-b) 48px 96px);
+  }
+  .awning::after {
+    content: "";
+    position: absolute;
+    left: 0; right: 0; top: 100%;
+    height: 24px;
+    background:
+      radial-gradient(circle at 24px 0, var(--awning-a) 24px, transparent 24.5px),
+      radial-gradient(circle at 72px 0, var(--awning-b) 24px, transparent 24.5px);
+    background-size: 96px 24px;
+    background-repeat: repeat-x;
+  }
+
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 0 16px 48px; }
+
+  /* Shop sign */
+  .sign {
+    margin: 12px auto 32px;
+    padding: 20px 24px;
+    background: var(--sign);
+    color: var(--sign-text);
+    text-align: center;
+    border: 4px solid var(--shelf);
+    border-radius: 6px;
+  }
+  .sign h1 {
+    margin: 0;
+    font: italic bold clamp(28px, 6vw, 48px)/1.15 Georgia, "Times New Roman", serif;
+    letter-spacing: 0.01em;
+    text-wrap: balance;
+  }
+  .sign p { margin: 6px 0 0; font-size: 15px; letter-spacing: 0.12em; text-transform: uppercase; }
+
+  /* Two columns: info on the left, shelves on the right. Stacks on narrow screens. */
+  .layout { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 32px; align-items: start; }
+  @media (max-width: 760px) { .layout { grid-template-columns: minmax(0, 1fr); } }
+
+  .info { border: 1px solid var(--line); background: var(--card); padding: 16px 18px; border-radius: 4px; }
+  .info h2, .shelf-title { margin: 0 0 8px; font-size: 13px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); }
+  .info ul { margin: 0 0 16px; padding-left: 18px; }
+  .info li { margin-bottom: 4px; }
+  .info p { margin: 0; color: var(--dim); font-size: 14px; }
+
+  .shelf-title { margin-bottom: 12px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 24px 20px; }
+
+  /* Each item sits on a shelf edge. */
+  .item {
+    display: flex; flex-direction: column; gap: 8px;
+    min-width: 0;
+    padding: 14px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    box-shadow: 0 6px 0 var(--shelf);
+  }
+  .thumb {
+    aspect-ratio: 4 / 3;
+    display: grid; place-items: center;
+    background: var(--sign);
+    color: var(--sign-text);
+    font: italic bold 40px Georgia, "Times New Roman", serif;
+    border-radius: 3px;
+  }
+  .tag { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim); }
+  .item h3 { margin: 0; font-size: 18px; line-height: 1.25; }
+  .item p { margin: 0; color: var(--dim); font-size: 14px; flex: 1; }
+  .buy { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 4px; }
+  .price {
+    padding: 2px 10px;
+    border: 2px dashed var(--price);
+    color: var(--price);
+    font-weight: bold; font-size: 14px; letter-spacing: 0.08em;
+    transform: rotate(-2deg);
+  }
+  .take {
+    padding: 6px 14px;
+    background: var(--link); color: var(--link-ink);
+    text-decoration: none; font-weight: bold; border-radius: 3px;
+  }
+  .take:hover { filter: brightness(1.1); }
+
+  .empty { background: transparent; border-style: dashed; box-shadow: 0 6px 0 var(--shelf); }
+  .empty .thumb { background: transparent; border: 2px dashed var(--line); color: var(--line); }
+
+  /* On phones, empty shelves shrink to short rows so the page is not a long scroll of blanks. */
+  @media (max-width: 520px) {
+    .empty .thumb { display: none; }
+    .empty p { display: none; }
+    .grid { gap: 20px; }
+  }
+
+  footer { margin-top: 40px; text-align: center; color: var(--dim); font-size: 14px; }
+</style>
+</head>
+<body>
+
+<div class="awning" aria-hidden="true"></div>
+
+<div class="wrap">
+
+  <header class="sign">
+    <h1>Jeremy's AI Emporium</h1>
+    <p>Everything here is free</p>
+  </header>
+
+  <div class="layout">
+
+    <aside class="info">
+      <h2>Store info</h2>
+      <ul>
+        <li>Open all hours</li>
+        <li>Nothing costs anything</li>
+        <li>Take what you like</li>
+      </ul>
+      <h2>Coming soon</h2>
+      <p>A version of this shop you can walk around inside.</p>
+    </aside>
+
+    <main>
+      <h2 class="shelf-title">On the shelves</h2>
+
+      <div class="grid">
+
+        <!--
+          TO ADD AN ITEM: copy one whole <article class="item"> block below and edit it.
+          Put the link to the thing in the href of "Take it".
+          Delete an "Empty shelf" block when you no longer need it.
+        -->
+
+        <article class="item">
+          <div class="thumb" aria-hidden="true">M</div>
+          <span class="tag">Game</span>
+          <h3>Mayor of Cat City</h3>
+          <p>A cat-and-police-pun platformer prototype. Scratch your way through the station.</p>
+          <div class="buy">
+            <span class="price">FREE</span>
+            <a class="take" href="#">Take it</a>
+          </div>
+        </article>
+
+        <article class="item empty">
+          <div class="thumb" aria-hidden="true">?</div>
+          <span class="tag">Coming soon</span>
+          <h3>Empty shelf</h3>
+          <p>Something new will go here.</p>
+        </article>
+
+        <article class="item empty">
+          <div class="thumb" aria-hidden="true">?</div>
+          <span class="tag">Coming soon</span>
+          <h3>Empty shelf</h3>
+          <p>Something new will go here.</p>
+        </article>
+
+        <article class="item empty">
+          <div class="thumb" aria-hidden="true">?</div>
+          <span class="tag">Coming soon</span>
+          <h3>Empty shelf</h3>
+          <p>Something new will go here.</p>
+        </article>
+
+        <article class="item empty">
+          <div class="thumb" aria-hidden="true">?</div>
+          <span class="tag">Coming soon</span>
+          <h3>Empty shelf</h3>
+          <p>Something new will go here.</p>
+        </article>
+
+        <article class="item empty">
+          <div class="thumb" aria-hidden="true">?</div>
+          <span class="tag">Coming soon</span>
+          <h3>Empty shelf</h3>
+          <p>Something new will go here.</p>
+        </article>
+
+      </div>
+    </main>
+
+  </div>
+
+  <footer>
+    <p>Jeremy's AI Emporium. Everything on the shelves is free.</p>
+  </footer>
+
+</div>
+
+</body>
+</html>
